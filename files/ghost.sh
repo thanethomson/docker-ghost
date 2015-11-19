@@ -21,7 +21,8 @@ then
   export PATH=/usr/local/bin:$PATH
   chown -R ghost:ghost $GHOST_DIR
   chown -R ghost:ghost $GHOST_CONTENT
-  # run as service in the background as www-data
+  # run in the foreground as the ghost user, otherwise Docker assumes
+  # this container's startup was a failure
   NODE_ENV=production \
     gosu ghost \
     forever \
