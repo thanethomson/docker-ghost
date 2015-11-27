@@ -51,6 +51,7 @@ RUN buildDeps=' \
     && rm -rf /tmp/npm*
 
 ENV GHOST_CONTENT /var/lib/ghost
+ENV GHOST_BACKUP  /var/lib/ghost-backup
 # expose our content directory
 VOLUME $GHOST_CONTENT
 # expose all of our logs
@@ -60,13 +61,22 @@ VOLUME /var/log
 COPY files/nginx.ghost.conf  /etc/nginx/nginx.ghost.conf
 COPY files/ghost.sh          $GHOST_DIR/ghost.sh
 COPY files/config.js         $GHOST_DIR/config.js
+COPY files/backup.sh         $GHOST_DIR/backup.sh
 
 # set file system permissions
 RUN chmod +x $GHOST_DIR/ghost.sh \
     && chown -R ghost:ghost $GHOST_DIR \
-    && chown -R ghost:ghost $GHOST_CONTENT
+    && chown -R ghost:ghost $GHOST_CONTENT \
+    && chmod +x $GHOST_DIR/backup.sh \
+    && mkdir -p $GHOST_BACKUP \
+    && chown -R ghost:ghost $GHOST_BACKUP
 
-# expose the nginx port
+# set up our cronjob to run at midnight every night
+RUN apt-get install -y cron \
+    && echo "GHOST_CONTENT=__GHOST_CONTENT__\nGHOST_BACKUP=__GHOST_BACKUP__\nGHOST_STORAGE=__GHOST_STORAGE__\n\n0 0 * * * ${GHOST_DIR}/backup.sh >> ${GHOST_LOGS}/backup.log 2>&1" > $GHOST_DIR/crontab
+
+# expose the nginx ports
 EXPOSE 80
+EXPOSE 443
 # run our executable script
-CMD ["./ghost.sh"]
+CMD [ "./ghost.sh" ]

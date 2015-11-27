@@ -21,6 +21,14 @@ then
   export PATH=/usr/local/bin:$PATH
   chown -R ghost:ghost $GHOST_DIR
   chown -R ghost:ghost $GHOST_CONTENT
+  # crontab configuration
+  sed -e "s#__GHOST_CONTENT__#${GHOST_CONTENT}#" \
+      -e "s#__GHOST_BACKUP__#${GHOST_BACKUP}#" \
+      -e "s#__GHOST_STORAGE__#${GHOST_STORAGE}#" \
+      <$GHOST_DIR/crontab >$GHOST_DIR/crontab.final
+  crontab -u ghost $GHOST_DIR/crontab.final
+  # run cron in the background
+  cron
   # run in the foreground as the ghost user, otherwise Docker assumes
   # this container's startup was a failure
   NODE_ENV=production \
